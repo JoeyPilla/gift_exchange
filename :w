@@ -1,8 +1,8 @@
 mod utils;
 
-use petgraph::dot::{Config, Dot};
 use petgraph::graph::NodeIndex;
 use petgraph::graph::UnGraph;
+    use petgraph::dot::{Dot, Config};
 use serde_json::{Result, Value};
 use wasm_bindgen::prelude::*;
 
@@ -29,14 +29,11 @@ struct Person {
 }
 
 #[wasm_bindgen]
-pub fn gift_exchange(s: String) -> String {
+pub fn gift_exchange(s: String) -> UnGraph<String, ()> {
     let mut users = get_users(s).unwrap();
 
     let graph = create_graph(users.clone());
-    String::from(format!(
-        "{:?}",
-        Dot::with_config(&graph, &[Config::EdgeNoLabel])
-    ))
+    format!("{:?}", Dot::with_config(&graph, &[Config::EdgeNoLabel]));
 }
 
 fn get_users(data: String) -> Result<Vec<Person>> {
