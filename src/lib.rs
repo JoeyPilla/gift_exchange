@@ -3,6 +3,8 @@ mod utils;
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::NodeIndex;
 use petgraph::graph::UnGraph;
+use rand::seq::SliceRandom;
+use rand::thread_rng;
 use serde_json::{Result, Value};
 use wasm_bindgen::prelude::*;
 
@@ -32,11 +34,12 @@ struct Person {
 pub fn gift_exchange(s: String) -> String {
     let mut users = get_users(s).unwrap();
 
+    users.shuffle(&mut thread_rng());
+
     let graph = create_graph(users.clone());
-    String::from(format!(
-        "{:?}",
-        Dot::with_config(&graph, &[Config::EdgeNoLabel])
-    ))
+
+    let resp = hamiltonian_cycle(graph, NodeIndex::new(1), Vec::new());
+    print_list(resp, users)
 }
 
 fn get_users(data: String) -> Result<Vec<Person>> {
@@ -85,4 +88,36 @@ fn add_edges(people: Vec<Person>, mut g: UnGraph<String, ()>) -> UnGraph<String,
         }
     }
     g
+}
+
+fn hamiltonian_cycle(
+    g: UnGraph<String, ()>,
+    n: NodeIndex,
+    mut v: Vec<NodeIndex>,
+) -> Vec<NodeIndex> {
+    let mut nodes = g.neighbors(n).detach();
+    while let Some(node) = nodes.next_node(&g) {
+        let ng = g.clone();
+        if v.contains(&n) {
+            continue;
+        }
+        v.push(n);
+        let resp = hamiltonian_cycle(ng, node, v.clone());
+        if g.node_count() == resp.len() {
+            return resp;
+        }
+        v.pop();
+    }
+    v
+}
+
+fn print_list(list: Vec<NodeIndex>, people: Vec<Person>) -> String {
+    let mut s = String::new();
+    let first_user = &people[list[0].index()];
+    for ni in list.iter() {
+        s = s + &format!("{:?} -> ", people[ni.index()].name);
+    }
+    s = s + &format!("{:?}", first_user.name);
+
+    s
 }
